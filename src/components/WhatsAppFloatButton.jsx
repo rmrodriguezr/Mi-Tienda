@@ -1,8 +1,9 @@
 import { FaWhatsapp } from "react-icons/fa";
-import { WHATSAPP_NUMBER } from "../utils/whatsapp";
+import { useSettings } from "../context/SettingsContext";
 
 export default function WhatsAppFloatButton() {
-  const link = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  const { whatsappNumber } = useSettings();
+  const link = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
     "Hola, tengo una pregunta sobre sus productos."
   )}`;
 

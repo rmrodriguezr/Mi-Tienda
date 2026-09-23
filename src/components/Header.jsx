@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { FiShoppingCart, FiMenu, FiX } from "react-icons/fi";
 import SearchBar from "./SearchBar";
 import { useCart } from "../context/CartContext";
-import { STORE_NAME, STORE_TAGLINE } from "../data/store";
+import { useSettings } from "../context/SettingsContext";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { totalItems, setIsCartOpen } = useCart();
+  const { storeName, storeTagline } = useSettings();
   const navigate = useNavigate();
 
   function handleSearchSubmit(e) {
@@ -21,8 +22,8 @@ export default function Header() {
     <header className="header">
       <div className="header__row">
         <Link to="/" className="header__logo" onClick={() => setMenuOpen(false)}>
-          <span className="header__logo-name">{STORE_NAME}</span>
-          <span className="header__logo-tagline">{STORE_TAGLINE}</span>
+          <span className="header__logo-name">{storeName}</span>
+          <span className="header__logo-tagline">{storeTagline}</span>
         </Link>
 
         <form className="header__search" onSubmit={handleSearchSubmit}>
@@ -50,9 +51,9 @@ export default function Header() {
       </div>
 
       <nav className={`header__nav ${menuOpen ? "header__nav--open" : ""}`}>
-        <Link to="/" onClick={() => setMenuOpen(false)}>Inicio</Link>
-        <Link to="/catalogo" onClick={() => setMenuOpen(false)}>Catálogo</Link>
-        <Link to="/catalogo?oferta=true" onClick={() => setMenuOpen(false)}>Ofertas</Link>
+        <NavLink to="/" end onClick={() => setMenuOpen(false)}>Inicio</NavLink>
+        <NavLink to="/catalogo" onClick={() => setMenuOpen(false)}>Catálogo</NavLink>
+        <Link to="/catalogo?promocion=true" onClick={() => setMenuOpen(false)}>Promociones</Link>
       </nav>
     </header>
   );

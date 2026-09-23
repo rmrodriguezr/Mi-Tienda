@@ -1,6 +1,4 @@
-import { CATEGORIES } from "../data/categories";
-
-export default function CategoryFilter({ selected, onSelect }) {
+export default function CategoryFilter({ categories, selected, onSelect }) {
   return (
     <div className="category-filter">
       <button
@@ -9,13 +7,13 @@ export default function CategoryFilter({ selected, onSelect }) {
       >
         Todas
       </button>
-      {CATEGORIES.map((category) => (
+      {categories.map((category) => (
         <button
-          key={category}
-          className={`category-filter__chip ${selected === category ? "category-filter__chip--active" : ""}`}
-          onClick={() => onSelect(category)}
+          key={category.id}
+          className={`category-filter__chip ${selected === category.id ? "category-filter__chip--active" : ""}`}
+          onClick={() => onSelect(category.id)}
         >
-          {category}
+          {category.nombre}
         </button>
       ))}
     </div>

@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Reglas de Firebase Storage para Mi Tienda.
+// NOTA: actualmente las imágenes de productos se suben a Cloudinary, no a Firebase Storage.
+// Si no usas Storage, lo más seguro es dejar estas reglas (o bloquear todo con
+// "allow read, write: if false;") en Firebase Console > Storage > Reglas.
+//
+// - Cualquier persona puede VER las imágenes de productos.
+// - Solo el administrador (documento admins/{uid} en Firestore) puede SUBIR o ELIMINAR.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    match /products/{imageId} {
+      allow read: if true;
+      allow write: if isAdmin()
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
+  }
+}

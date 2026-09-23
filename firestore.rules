@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Reglas de Firestore para Mi Tienda.
+// Cópialas en Firebase Console > Firestore Database > Reglas > Publicar.
+//
+// MODELO DE SEGURIDAD
+// - La tienda es pública: cualquiera LEE productos activos, categorías activas y la
+//   configuración general.
+// - El administrador se identifica por la EXISTENCIA de un documento admins/{uid}, donde
+//   {uid} es su UID de Firebase Authentication. Ese documento solo se puede crear a mano
+//   desde la consola de Firebase (ningún cliente puede escribir en "admins"), por lo que
+//   nadie puede darse permisos a sí mismo aunque logre registrarse en Authentication.
+// - Solo el administrador puede CREAR, EDITAR, ELIMINAR o leer productos/categorías inactivos.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Cada usuario solo puede comprobar si ÉL es admin (leer su propio documento).
+    // Nadie puede escribir desde la app.
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /products/{productId} {
+      allow read: if resource.data.activo == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if resource.data.activo == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
