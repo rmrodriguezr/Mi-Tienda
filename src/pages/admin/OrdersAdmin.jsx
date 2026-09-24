@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { FiCheck, FiCheckCircle, FiPhone, FiX } from "react-icons/fi";
 import {
   getAllOrders,
-  updateOrderStatus,
+  markOrderAsSale,
+  deleteOrder,
   markOrderDelivered,
 } from "../../services/orderService";
 import { formatPrice } from "../../utils/format";
@@ -50,6 +51,7 @@ export default function OrdersAdmin() {
   const [orders, setOrders] = useState([]);
   const [busyId, setBusyId] = useState(null);
   const [toDeliver, setToDeliver] = useState(null);
+  const [toDecline, setToDecline] = useState(null);
 
   async function loadData() {
     setLoading(true);
@@ -73,17 +75,35 @@ export default function OrdersAdmin() {
   const deliveredOrders = useMemo(() => orders.filter((o) => o.entregado), [orders]);
   const visibleOrders = tab === "activos" ? activeOrders : deliveredOrders;
 
-  async function handleSetStatus(order, estado) {
+  async function handleMarkAsSale(order) {
     setBusyId(order.id);
     try {
-      await updateOrderStatus(order.id, estado);
-      setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, estado } : o)));
-      showToast(`Pedido marcado como "${STATUS_LABELS[estado]}".`, "success");
+      await markOrderAsSale(order.id);
+      setOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, estado: "venta" } : o))
+      );
+      showToast('Pedido marcado como "Venta".', "success");
     } catch (err) {
       console.error(err);
       showToast("No se pudo actualizar el pedido.", "error");
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function handleDecline() {
+    if (!toDecline) return;
+    setBusyId(toDecline.id);
+    try {
+      await deleteOrder(toDecline.id);
+      setOrders((prev) => prev.filter((o) => o.id !== toDecline.id));
+      showToast("Pedido declinado y eliminado.", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("No se pudo eliminar el pedido.", "error");
+    } finally {
+      setBusyId(null);
+      setToDecline(null);
     }
   }
 
@@ -187,14 +207,14 @@ export default function OrdersAdmin() {
                     <button
                       className="btn btn--primary"
                       disabled={busyId === order.id}
-                      onClick={() => handleSetStatus(order, "venta")}
+                      onClick={() => handleMarkAsSale(order)}
                     >
                       <FiCheck size={15} /> Marcar como venta
                     </button>
                     <button
                       className="btn btn--outline"
                       disabled={busyId === order.id}
-                      onClick={() => handleSetStatus(order, "declinado")}
+                      onClick={() => setToDecline(order)}
                     >
                       <FiX size={15} /> Marcar como declinado
                     </button>
@@ -223,6 +243,15 @@ export default function OrdersAdmin() {
         confirmLabel="Marcar como entregado"
         onConfirm={handleMarkDelivered}
         onCancel={() => setToDeliver(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toDecline)}
+        title="Declinar pedido"
+        message="El pedido se eliminará por completo y no quedará registrado. Esta acción no se puede deshacer. ¿Continuar?"
+        confirmLabel="Declinar y eliminar"
+        onConfirm={handleDecline}
+        onCancel={() => setToDecline(null)}
       />
     </div>
   );

@@ -12,6 +12,7 @@ import {
   doc,
   addDoc,
   updateDoc,
+  deleteDoc,
   getDocs,
   query,
   orderBy,
@@ -56,12 +57,18 @@ export async function getAllOrders() {
   return snapshot.docs.map(mapDoc);
 }
 
-// estado: "venta" (se concretó) o "declinado" (el cliente no siguió con la compra).
-export async function updateOrderStatus(id, estado) {
-  await updateDoc(doc(db, "orders", id), { estado, updatedAt: serverTimestamp() });
+// Marca el pedido como venta confirmada.
+export async function markOrderAsSale(id) {
+  await updateDoc(doc(db, "orders", id), { estado: "venta", updatedAt: serverTimestamp() });
 }
 
-// Saca el pedido del listado activo (venta entregada o caso cerrado).
+// El cliente no siguió con la compra: el pedido se borra directamente, no queda
+// esperando ninguna acción más.
+export async function deleteOrder(id) {
+  await deleteDoc(doc(db, "orders", id));
+}
+
+// Saca el pedido del listado activo (venta entregada).
 export async function markOrderDelivered(id) {
   await updateDoc(doc(db, "orders", id), { entregado: true, updatedAt: serverTimestamp() });
 }
