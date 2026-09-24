@@ -40,5 +40,18 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Pedidos enviados desde el checkout público (/carrito). Cualquier visitante puede
+    // CREAR uno (sin sesión), siempre que llegue en el estado inicial correcto: sin eso,
+    // nadie podría marcar su propio pedido como "venta" ni leer los pedidos de otros.
+    // Solo el administrador puede LEER, EDITAR o BORRAR pedidos.
+    match /orders/{orderId} {
+      allow create: if request.resource.data.estado == "pendiente"
+                    && request.resource.data.entregado == false
+                    && request.resource.data.customer is map
+                    && request.resource.data.items is list
+                    && request.resource.data.items.size() > 0;
+      allow read, update, delete: if isAdmin();
+    }
   }
 }

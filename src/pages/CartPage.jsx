@@ -8,6 +8,7 @@ import { formatPrice } from "../utils/format";
 import { getEffectivePrice } from "../utils/pricing";
 import { handleImageError } from "../utils/image";
 import { buildWhatsAppLink } from "../utils/whatsapp";
+import { createOrder } from "../services/orderService";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { COLOMBIA_DEPARTMENTS, DEPARTMENT_NAMES } from "../data/colombia";
 import {
@@ -84,7 +85,7 @@ export default function CartPage() {
     increment(item.id);
   }
 
-  function handleSendOrder(e) {
+  async function handleSendOrder(e) {
     e.preventDefault();
     if (sending) return;
     const nextErrors = validateCustomer(customer);
@@ -96,9 +97,31 @@ export default function CartPage() {
       return;
     }
     setSending(true);
+    try {
+      const orderItems = items.map((item) => {
+        const precioUnitario = getEffectivePrice(item);
+        return {
+          id: item.id,
+          nombre: item.nombre,
+          cantidad: item.cantidad,
+          precioUnitario,
+          subtotal: precioUnitario * item.cantidad,
+        };
+      });
+      await createOrder(customer, orderItems, totalPrice);
+    } catch (err) {
+      // El pedido igual se envía por WhatsApp aunque falle el registro en el panel;
+      // no queremos bloquear la compra por un problema de conexión con Firestore.
+      console.error("No se pudo registrar el pedido en el panel:", err);
+    }
     const link = buildWhatsAppLink(items, customer, whatsappNumber, storeName);
     window.open(link, "_blank", "noopener,noreferrer");
-    setTimeout(() => setSending(false), 1500);
+    // El pedido ya se envió: se vacía el carrito para que la notificación (el contador
+    // del ícono) desaparezca, igual que si el cliente hubiera terminado su compra.
+    clearCart();
+    setCustomer(EMPTY_CUSTOMER);
+    setSending(false);
+    showToast("✓ Pedido enviado. Continúa la conversación en WhatsApp.", "success");
   }
 
   if (items.length === 0) {
