@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiCheck, FiCheckCircle, FiPhone, FiX } from "react-icons/fi";
+import { FiCheck, FiCheckCircle, FiPhone, FiTrash2, FiX } from "react-icons/fi";
 import {
   getAllOrders,
   markOrderAsSale,
@@ -52,6 +52,7 @@ export default function OrdersAdmin() {
   const [busyId, setBusyId] = useState(null);
   const [toDeliver, setToDeliver] = useState(null);
   const [toDecline, setToDecline] = useState(null);
+  const [toRemove, setToRemove] = useState(null);
 
   async function loadData() {
     setLoading(true);
@@ -104,6 +105,22 @@ export default function OrdersAdmin() {
     } finally {
       setBusyId(null);
       setToDecline(null);
+    }
+  }
+
+  async function handleRemove() {
+    if (!toRemove) return;
+    setBusyId(toRemove.id);
+    try {
+      await deleteOrder(toRemove.id);
+      setOrders((prev) => prev.filter((o) => o.id !== toRemove.id));
+      showToast("Pedido eliminado del historial.", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("No se pudo eliminar el pedido.", "error");
+    } finally {
+      setBusyId(null);
+      setToRemove(null);
     }
   }
 
@@ -230,6 +247,16 @@ export default function OrdersAdmin() {
                     <FiCheckCircle size={15} /> Marcar como entregado
                   </button>
                 )}
+
+                {tab === "entregados" && (
+                  <button
+                    className="btn btn--outline"
+                    disabled={busyId === order.id}
+                    onClick={() => setToRemove(order)}
+                  >
+                    <FiTrash2 size={15} /> Eliminar
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -252,6 +279,15 @@ export default function OrdersAdmin() {
         confirmLabel="Declinar y eliminar"
         onConfirm={handleDecline}
         onCancel={() => setToDecline(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toRemove)}
+        title="Eliminar pedido"
+        message="Se eliminará por completo del historial de entregados. Esta acción no se puede deshacer. ¿Continuar?"
+        confirmLabel="Eliminar"
+        onConfirm={handleRemove}
+        onCancel={() => setToRemove(null)}
       />
     </div>
   );
