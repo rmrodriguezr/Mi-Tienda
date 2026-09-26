@@ -2,14 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAllProducts } from "../../services/productService";
 import { getAllCategories } from "../../services/categoryService";
-import { seedDemoData } from "../../services/seedService";
-import { useToast } from "../../context/ToastContext";
 import { firebaseReady } from "../../services/firebase";
 
 export default function Dashboard() {
-  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState("");
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -35,19 +31,6 @@ export default function Dashboard() {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function handleSeed() {
-    setSeeding(true);
-    try {
-      await seedDemoData();
-      showToast("Datos de prueba creados correctamente.", "success");
-      await loadData();
-    } catch (err) {
-      showToast(err.message, "error");
-    } finally {
-      setSeeding(false);
-    }
-  }
 
   const stats = {
     total: products.length,
@@ -87,12 +70,12 @@ export default function Dashboard() {
       {!loading && !error && stats.total === 0 && (
         <div className="admin-card" style={{ marginBottom: "1.5rem" }}>
           <p style={{ marginBottom: "0.75rem" }}>
-            Todavía no tienes productos ni categorías. Puedes crear datos de prueba para
-            desarrollo, o empezar a agregar tus propios productos.
+            Todavía no tienes productos ni categorías. Crea primero una categoría y luego
+            agrega tus productos.
           </p>
-          <button className="btn btn--secondary" onClick={handleSeed} disabled={seeding}>
-            {seeding ? "Creando..." : "Cargar datos de prueba"}
-          </button>
+          <Link to="/admin/categorias" className="btn btn--secondary">
+            Crear categoría
+          </Link>
         </div>
       )}
 
